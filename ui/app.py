@@ -137,9 +137,22 @@ with st.sidebar:
         
         student_id = st.text_input(
             "Student ID", 
-            placeholder="e.g., S001", 
+            placeholder="e.g., 24004603", 
+            max_chars=8,
             value=st.session_state.student_id if st.session_state.student_id else ""
         )
+
+        # After student_id input, add validation
+        if student_id and len(student_id) != 8:
+            st.error("❌ Student ID must be exactly 8 digits (e.g., 24004603)")
+        elif student_id and not student_id.isdigit():
+            st.error("❌ Student ID must contain only numbers")
+        elif student_id:
+            st.session_state.student_id = student_id
+            if len(student_id) == 8 and student_id.isdigit():
+                st.success("✅ Valid student ID format")
+        else:
+            st.session_state.student_id = student_id    
         
         cgpa = st.number_input(
             "CGPA", 
