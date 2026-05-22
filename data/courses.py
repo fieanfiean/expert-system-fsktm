@@ -793,6 +793,108 @@ MM_ELECTIVES = {
     "WIF2003": {"name": "Web Programming", "credits": 3, "prerequisites": [], "math_heavy": False, "pathway": "MM"}
 }
 
+# ==================== DATA SCIENCE ELECTIVES ====================
+# Source: Handbook pages 88-92
+
+DS_ELECTIVES = {
+    "WIG2001": {
+        "name": "Digital Image Processing",
+        "credits": 3,
+        "prerequisites": [],
+        "math_heavy": False,
+        "pathway": "DS",
+        "category": "DS Elective"
+    },
+    "WIG2002": {
+        "name": "Computer Graphics",
+        "credits": 3,
+        "prerequisites": [],
+        "math_heavy": False,
+        "pathway": "DS",
+        "category": "DS Elective"
+    },
+    "WIG2004": {
+        "name": "Audio Synthesis",
+        "credits": 3,
+        "prerequisites": [],
+        "math_heavy": False,
+        "pathway": "DS",
+        "category": "DS Elective"
+    },
+    "WIG2005": {
+        "name": "Interactive Design",
+        "credits": 3,
+        "prerequisites": [],
+        "math_heavy": False,
+        "pathway": "DS",
+        "category": "DS Elective"
+    },
+    "WIG3001": {
+        "name": "Mathematics for Multimedia",
+        "credits": 3,
+        "prerequisites": [],
+        "math_heavy": True,
+        "pathway": "DS",
+        "category": "DS Elective"
+    },
+    "WIG3002": {
+        "name": "Rendering and Animation",
+        "credits": 3,
+        "prerequisites": [],
+        "math_heavy": False,
+        "pathway": "DS",
+        "category": "DS Elective"
+    },
+    "WIG3003": {
+        "name": "Multimedia Programming",
+        "credits": 3,
+        "prerequisites": [],
+        "math_heavy": False,
+        "pathway": "DS",
+        "category": "DS Elective"
+    },
+    "WIG3004": {
+        "name": "Virtual Reality",
+        "credits": 3,
+        "prerequisites": [],
+        "math_heavy": False,
+        "pathway": "DS",
+        "category": "DS Elective"
+    },
+    "WIG3005": {
+        "name": "Game Development",
+        "credits": 3,
+        "prerequisites": [],
+        "math_heavy": False,
+        "pathway": "DS",
+        "category": "DS Elective"
+    },
+    "WIG3006": {
+        "name": "Digital Video Processing",
+        "credits": 3,
+        "prerequisites": [],
+        "math_heavy": False,
+        "pathway": "DS",
+        "category": "DS Elective"
+    },
+    "WIE3010": {
+        "name": "Data Visualization",
+        "credits": 3,
+        "prerequisites": [],
+        "math_heavy": False,
+        "pathway": "DS",
+        "category": "DS Elective"
+    },
+    "WIF2003": {
+        "name": "Web Programming",
+        "credits": 3,
+        "prerequisites": [],
+        "math_heavy": False,
+        "pathway": "DS",
+        "category": "DS Elective"
+    }
+}
+
 # ==================== MATH-HEAVY COURSES (For Heuristic 1) ====================
 
 MATH_HEAVY_COURSES = [
@@ -842,7 +944,7 @@ def get_programme_electives(programme):
         "IS": IS_ELECTIVES,
         "SE": SE_ELECTIVES,
         "MM": MM_ELECTIVES,
-        "DS": {}  # DS electives from handbook pages 88-92
+        "DS": DS_ELECTIVES
     }
     return elective_map.get(programme, {})
 
