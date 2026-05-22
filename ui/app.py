@@ -20,8 +20,17 @@ st.set_page_config(
     layout="wide"
 )
 
-# Initialize session state
-if 'recommendations_generated' not in st.session_state:
+# Initialize session state with default null values
+if 'initialized' not in st.session_state:
+    st.session_state.initialized = True
+    st.session_state.student_id = ""
+    st.session_state.cgpa = None
+    st.session_state.semester = None
+    st.session_state.programme = None
+    st.session_state.completed_courses = []
+    st.session_state.interest = None
+    st.session_state.is_fyp_semester = False
+    st.session_state.remaining_credits = None
     st.session_state.recommendations_generated = False
 
 # Title
