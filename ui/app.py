@@ -20,7 +20,8 @@ st.set_page_config(
     layout="wide"
 )
 
-# ========== INITIALIZE SESSION STATE WITH NULL VALUES ==========
+# ========== INITIALIZE ALL SESSION STATE VARIABLES AT THE VERY TOP ==========
+# This MUST be before any other st.session_state access
 if 'initialized' not in st.session_state:
     st.session_state.initialized = True
     st.session_state.student_id = ""
@@ -81,6 +82,7 @@ def reset_manual_inputs():
     st.session_state.is_fyp_semester = False
     st.session_state.remaining_credits = None
     st.session_state.recommendations_generated = False
+    st.session_state.loaded_student = None
 
 # Sidebar for student input
 with st.sidebar:
@@ -89,8 +91,6 @@ with st.sidebar:
     # Reset button
     if st.button("🔄 Reset All Fields", use_container_width=True):
         reset_manual_inputs()
-        st.session_state.loaded_student = None
-        st.session_state.input_method = "Manual Input"
         st.rerun()
     
     st.markdown("---")
@@ -132,136 +132,120 @@ with st.sidebar:
             st.write(f"🎯 Programme: {st.session_state.programme_display}")
             st.write(f"✅ Completed Courses: {len(st.session_state.completed_courses)}")
     else:
-        # Manual input mode with NULL defaults
+        # Manual input mode
         st.write("**Enter Student Information:**")
         
+        # Student ID with 8-digit validation
         student_id = st.text_input(
-            "Student ID", 
+            "Student ID (8 digits)", 
             placeholder="e.g., 24004603", 
             max_chars=8,
             value=st.session_state.student_id if st.session_state.student_id else ""
         )
-
-        # After student_id input, add validation
+        
+        # Validation
         if student_id and len(student_id) != 8:
-            st.error("❌ Student ID must be exactly 8 digits (e.g., 24004603)")
+            st.error("❌ Student ID must be exactly 8 digits")
         elif student_id and not student_id.isdigit():
             st.error("❌ Student ID must contain only numbers")
         elif student_id:
             st.session_state.student_id = student_id
-            if len(student_id) == 8 and student_id.isdigit():
-                st.success("✅ Valid student ID format")
-        else:
-            st.session_state.student_id = student_id    
         
         cgpa = st.number_input(
             "CGPA", 
             min_value=0.0, 
             max_value=4.0, 
             value=st.session_state.cgpa if st.session_state.cgpa is not None else 0.0,
-            step=0.01,
-            placeholder="Enter CGPA (0.0 - 4.0)"
+            step=0.01
         )
+        if cgpa > 0:
+            st.session_state.cgpa = cgpa
         
         semester = st.selectbox(
             "Semester", 
             [1, 2, 3, 4, 5, 6, 7, 8], 
-            index=st.session_state.semester - 1 if st.session_state.semester is not None else None,
-            placeholder="Select semester"
+            index=st.session_state.semester - 1 if st.session_state.semester is not None else 0
         )
+        st.session_state.semester = semester
         
         programme_code = st.selectbox(
             "Programme", 
             PROGRAMME_OPTIONS, 
-            index=PROGRAMME_OPTIONS.index(st.session_state.programme) if st.session_state.programme in PROGRAMME_OPTIONS else None,
-            placeholder="Select programme",
+            index=PROGRAMME_OPTIONS.index(st.session_state.programme) if st.session_state.programme in PROGRAMME_OPTIONS else 0,
             format_func=lambda x: PROGRAMME_NAMES[x]
         )
-        
-        # Store values in session state as user types
-        if student_id:
-            st.session_state.student_id = student_id
-        if cgpa > 0:
-            st.session_state.cgpa = cgpa
-        if semester:
-            st.session_state.semester = semester
-        if programme_code:
-            st.session_state.programme = programme_code
-            st.session_state.programme_display = PROGRAMME_NAMES[programme_code]
+        st.session_state.programme = programme_code
+        st.session_state.programme_display = PROGRAMME_NAMES[programme_code]
         
         st.markdown("---")
         st.subheader("✅ Completed Courses")
         
         completed_courses = []
         
-        # Only show course selection if programme is selected
-        if st.session_state.programme:
-            # Faculty Core Courses
-            st.write("**📖 Faculty Core Courses (All Students):**")
-            for code, info in FACULTY_CORE.items():
-                prereq_str = ', '.join(info['prerequisites']) if info['prerequisites'] else 'None'
+        # Faculty Core Courses
+        st.write("**📖 Faculty Core Courses (All Students):**")
+        for code, info in FACULTY_CORE.items():
+            prereq_str = ', '.join(info['prerequisites']) if info['prerequisites'] else 'None'
+            
+            col1, col2 = st.columns([4, 1])
+            with col1:
+                st.write(f"**{code}** - {info['name']}")
+                st.caption(f"📚 Prerequisites: {prereq_str} | Credits: {info['credits']}")
+            with col2:
+                is_checked = code in st.session_state.completed_courses
+                if st.checkbox("✓ Complete", key=f"faculty_section_{code}", value=is_checked):
+                    completed_courses.append(code)
+            st.divider()
+        
+        # Programme-specific courses
+        st.write(f"**🎯 {PROGRAMME_NAMES[st.session_state.programme]} Core Courses:**")
+        
+        core_dict = get_core_dict(st.session_state.programme)
+        prefix = st.session_state.programme.lower()
+        
+        for code, info in core_dict.items():
+            if code in FACULTY_CORE:
+                continue
                 
-                col1, col2 = st.columns([4, 1])
-                with col1:
-                    st.write(f"**{code}** - {info['name']}")
-                    st.caption(f"📚 Prerequisites: {prereq_str} | Credits: {info['credits']}")
-                with col2:
-                    is_checked = code in st.session_state.completed_courses
-                    if st.checkbox("✓ Complete", key=f"faculty_section_{code}", value=is_checked):
-                        completed_courses.append(code)
-                st.divider()
+            prereq_str = ', '.join(info['prerequisites']) if info['prerequisites'] else 'None'
             
-            # Programme-specific courses
-            st.write(f"**🎯 {PROGRAMME_NAMES[st.session_state.programme]} Core Courses:**")
-            
-            core_dict = get_core_dict(st.session_state.programme)
-            prefix = st.session_state.programme.lower()
-            
-            for code, info in core_dict.items():
-                if code in FACULTY_CORE:
-                    continue
-                    
-                prereq_str = ', '.join(info['prerequisites']) if info['prerequisites'] else 'None'
-                
-                col1, col2 = st.columns([4, 1])
-                with col1:
-                    st.write(f"**{code}** - {info['name']}")
-                    st.caption(f"📚 Prerequisites: {prereq_str} | Credits: {info['credits']}")
-                with col2:
-                    is_checked = code in st.session_state.completed_courses
-                    if st.checkbox("✓ Complete", key=f"{prefix}_core_section_{code}", value=is_checked):
-                        completed_courses.append(code)
-                st.divider()
-            
-            st.session_state.completed_courses = completed_courses
-            
-            st.markdown("---")
-            st.subheader("🎯 Interests")
-            interest = st.selectbox(
-                "Primary interest",
-                ["AI / Machine Learning", "Networking", "Data Science", "Software Development", 
-                 "Cybersecurity", "Multimedia", "Information Systems"],
-                index=0
-            )
-            st.session_state.interest = interest
-            
-            is_fyp_semester = st.checkbox(
-                "FYP Semester? (Heuristic 1 will deprioritize math-heavy courses)",
-                value=st.session_state.is_fyp_semester
-            )
-            st.session_state.is_fyp_semester = is_fyp_semester
-            
-            remaining_credits = st.number_input(
-                "Remaining Credits for Graduation", 
-                min_value=0, 
-                max_value=128, 
-                value=st.session_state.remaining_credits if st.session_state.remaining_credits is not None else 60
-            )
-            st.session_state.remaining_credits = remaining_credits
-        else:
-            st.info("👈 Please select a programme first to see course options")
+            col1, col2 = st.columns([4, 1])
+            with col1:
+                st.write(f"**{code}** - {info['name']}")
+                st.caption(f"📚 Prerequisites: {prereq_str} | Credits: {info['credits']}")
+            with col2:
+                is_checked = code in st.session_state.completed_courses
+                if st.checkbox("✓ Complete", key=f"{prefix}_core_section_{code}", value=is_checked):
+                    completed_courses.append(code)
+            st.divider()
+        
+        st.session_state.completed_courses = completed_courses
+        
+        st.markdown("---")
+        st.subheader("🎯 Interests")
+        interest = st.selectbox(
+            "Primary interest",
+            ["AI / Machine Learning", "Networking", "Data Science", "Software Development", 
+             "Cybersecurity", "Multimedia", "Information Systems"],
+            index=0
+        )
+        st.session_state.interest = interest
+        
+        is_fyp_semester = st.checkbox(
+            "FYP Semester? (Heuristic 1 will deprioritize math-heavy courses)",
+            value=st.session_state.is_fyp_semester
+        )
+        st.session_state.is_fyp_semester = is_fyp_semester
+        
+        remaining_credits = st.number_input(
+            "Remaining Credits for Graduation", 
+            min_value=0, 
+            max_value=128, 
+            value=st.session_state.remaining_credits if st.session_state.remaining_credits is not None else 60
+        )
+        st.session_state.remaining_credits = remaining_credits
 
-# Main area - Only show if data is entered
+# Main area
 col1, col2 = st.columns([1, 1])
 
 # Check if we have valid data to display
@@ -355,7 +339,7 @@ if has_valid_data:
             for exp in explanations[:15]:
                 st.text(exp)
 else:
-    st.info("⚠️ Please fill in all required fields in the sidebar (Student ID, CGPA, Semester, Programme) to generate recommendations")
+    st.info("⚠️ Please fill in all required fields in the sidebar to generate recommendations")
 
 # Show survey if recommendations were generated
 if st.session_state.recommendations_generated:
